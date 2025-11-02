@@ -1,0 +1,62 @@
+<?php
+$id = $modx->resource->get('id');
+
+if ($id == 59 || $id == 60 || $id == 61 || $id == 72) {
+    $tel_display = '8 961 279 33 **'; 
+    $tel2 = '79612793377';
+} else {
+    $tel_display = '+7(928)229-99-**'; 
+    $tel2 = '79282299910';
+}
+
+// Записываем две последние цифры в сессию PHP.
+$_SESSION['last_two_digits'] = substr($tel2, -2);
+
+
+print <<<HTML
+<a href="tel:+$tel2" id="phone-link">
+    <span itemprop="telephone" id="phone-display">$tel_display</span>
+</a>
+
+<script>
+// Флаг, чтобы загрузка происходила только один раз
+let digitsLoaded = false; 
+
+async function fetchLastTwoDigits() {
+    // Если цифры уже загружены или идет загрузка, выходим из функции
+    if (digitsLoaded) return; 
+    digitsLoaded = true; // Устанавливаем флаг, чтобы предотвратить повторные вызовы
+
+    try {
+        let response = await fetch('/u.php', { method: 'POST' });
+
+        if (!response.ok) {
+            throw new Error('Ошибка HTTP: ' + response.status);
+        }
+
+        let lastTwoDigits = await response.text();
+        
+        const phoneDisplay = document.getElementById('phone-display');
+        const currentText = phoneDisplay.innerText;
+        
+        // Заменяем маску ** на реальные цифры
+        phoneDisplay.innerText = currentText.replace('**', lastTwoDigits);
+        
+    } catch (error) {
+        console.error('Ошибка при запросе:', error);
+        // В случае ошибки можно сбросить флаг, если нужно повторить попытку
+        // digitsLoaded = false; 
+    }
+}
+
+// Добавляем обработчики событий наведения
+const phoneLink = document.getElementById('phone-link');
+
+// Для десктопов (наведение мыши)
+phoneLink.addEventListener('mouseenter', fetchLastTwoDigits);
+
+// Для мобильных устройств (первое касание)
+phoneLink.addEventListener('touchstart', fetchLastTwoDigits);
+</script>
+HTML;
+?>
